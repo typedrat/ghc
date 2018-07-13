@@ -38,6 +38,7 @@ module GHC.TypeLits
   , type N.Div, type N.Mod, type N.Log2
   , AppendSymbol
   , N.CmpNat, CmpSymbol, CmpChar
+  , SymbolToString
 
   -- * User-defined type errors
   , TypeError
@@ -163,6 +164,11 @@ type family CmpChar (m :: Char) (n :: Char) :: Ordering
 --
 -- @since 4.10.0.0
 type family AppendSymbol (m ::Symbol) (n :: Symbol) :: Symbol
+
+-- | Conversion of type-level symbols to type-level strings.
+--
+-- @since 4.12.0.0
+type family SymbolToString (m :: Symbol) :: String
 
 -- | A description of a custom type error.
 data {-kind-} ErrorMessage = Text Symbol

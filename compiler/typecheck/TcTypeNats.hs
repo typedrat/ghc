@@ -20,6 +20,7 @@ module TcTypeNats
   , typeSymbolCmpTyCon
   , typeSymbolAppendTyCon
   , typeCharCmpTyCon
+  , typeSymbolToStringTyCon
   ) where
 
 import GhcPrelude
@@ -49,6 +50,7 @@ import PrelNames  ( gHC_TYPELITS
                   , typeSymbolCmpTyFamNameKey
                   , typeSymbolAppendFamNameKey
                   , typeCharCmpTyFamNameKey
+                  , typeSymbolToStringTyFamNameKey
                   )
 import FastString ( FastString
                   , fsLit, nilFS, nullFS, unpackFS, mkFastString, appendFS
@@ -57,8 +59,6 @@ import qualified Data.Map as Map
 import Data.Maybe ( isJust )
 import Control.Monad ( guard )
 import Data.List  ( isPrefixOf, isSuffixOf )
-
-import Debug.Trace
 
 {-
 Note [Type-level literals]
@@ -154,6 +154,7 @@ typeNatTyCons =
   , typeSymbolCmpTyCon
   , typeSymbolAppendTyCon
   , typeCharCmpTyCon
+  , typeSymbolToStringTyCon
   ]
 
 typeNatAddTyCon :: TyCon
@@ -326,6 +327,25 @@ typeCharCmpTyCon =
     , sfInteractInert = \_ _ _ _ -> []
     }
 
+typeSymbolToStringTyCon :: TyCon
+typeSymbolToStringTyCon =
+  mkFamilyTyCon name
+    (mkTemplateAnonTyConBinders [ typeSymbolKind ])
+    (mkListTy charTy)
+    Nothing
+    (BuiltInSynFamTyCon ops)
+    Nothing
+    NotInjective
+
+  where
+  name = mkWiredInTyConName UserSyntax gHC_TYPELITS (fsLit "SymbolToString")
+                typeSymbolToStringTyFamNameKey typeSymbolToStringTyCon
+  ops = BuiltInSynFamily
+    { sfMatchFam      = matchFamSymbolToString
+    , sfInteractTop   = interactTopSymbolToString
+    , sfInteractInert = \_ _ _ _ -> []
+    }
+
 -- Make a unary built-in constructor of kind: Nat -> Nat
 mkTypeNatFunTyCon1 :: Name -> BuiltInSynFamily -> TyCon
 mkTypeNatFunTyCon1 op tcb =
@@ -376,6 +396,7 @@ axAddDef
   , axCmpSymbolDef
   , axAppendSymbolDef
   , axCmpCharDef
+  , axSymbolToStringDef
   , axAdd0L
   , axAdd0R
   , axMul0L
@@ -449,8 +470,19 @@ axCmpCharDef =
         do [Pair s1 s2, Pair t1 t2] <- return cs
            s2' <- isCharLitTy s2
            t2' <- isCharLitTy t2
-           return (mkTyConApp typeCharCmpTyCon [s1,t1] ===
+           return (cmpChar s1 t1 ===
                    ordering (compare s2' t2')) }
+
+axSymbolToStringDef =
+  CoAxiomRule
+  { coaxrName      = fsLit "SymbolToStringDef"
+  , coaxrAsmpRoles = [Nominal]
+  , coaxrRole      = Nominal
+  , coaxrProves    = \cs ->
+      do [Pair s1 s2] <- return cs
+         s2' <- isStrLitTy s2
+         return (symbolToString s1 ===
+                 mkPromotedStringTy (unpackFS s2')) }
 
 axSubDef = mkBinAxiom "SubDef" typeNatSubTyCon $
               \x y -> fmap num (minus x y)
@@ -506,6 +538,7 @@ typeNatCoAxiomRules = Map.fromList $ map (\x -> (coaxrName x, x))
   , axCmpSymbolDef
   , axAppendSymbolDef
   , axCmpCharDef
+  , axSymbolToStringDef
   , axAdd0L
   , axAdd0R
   , axMul0L
@@ -569,6 +602,12 @@ appendSymbol s t = mkTyConApp typeSymbolAppendTyCon [s, t]
 
 cmpChar :: Type -> Type -> Type
 cmpChar s t = mkTyConApp typeCharCmpTyCon [s,t]
+
+symbolToString :: Type -> Type
+symbolToString s = mkTyConApp typeSymbolToStringTyCon [s]
+
+mkPromotedStringTy :: String -> Type
+mkPromotedStringTy = mkPromotedListTy charTy . fmap mkCharLitTy
 
 (===) :: Type -> Type -> Pair Type
 x === y = Pair x y
@@ -776,6 +815,13 @@ matchFamCmpChar [s,t]
         mbY = isCharLitTy t
 matchFamCmpChar _ = Nothing
 
+matchFamSymbolToString :: [Type] -> Maybe (CoAxiomRule, [Type], Type)
+matchFamSymbolToString [s]
+  | Just x <- mbX = Just (axSymbolToStringDef, [s], mkPromotedStringTy (unpackFS x))
+  where
+    mbX = isStrLitTy s
+matchFamSymbolToString _ = Nothing
+
 {-------------------------------------------------------------------------------
 Interact with axioms
 -------------------------------------------------------------------------------}
@@ -909,6 +955,9 @@ interactTopAppendSymbol [s,t] r
   mbZ = isStrLitTy r
 
 interactTopAppendSymbol _ _ = []
+
+interactTopSymbolToString :: [Xi] -> Xi -> [Pair Type]
+interactTopSymbolToString _ _ = []
 
 {-------------------------------------------------------------------------------
 Interaction with inerts

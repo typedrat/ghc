@@ -1902,6 +1902,9 @@ typeSymbolAppendFamNameKey = mkPreludeTyConUnique 190
 typeCharCmpTyFamNameKey :: Unique
 typeCharCmpTyFamNameKey = mkPreludeTyConUnique 191
 
+typeSymbolToStringTyFamNameKey :: Unique
+typeSymbolToStringTyFamNameKey = mkPreludeTyConUnique 192
+
 ---------------- Template Haskell -------------------
 --      THNames.hs: USES TyConUniques 200-299
 -----------------------------------------------------
