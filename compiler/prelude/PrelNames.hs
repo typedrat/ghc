@@ -370,7 +370,7 @@ basicKnownKeyNames
         randomClassName, randomGenClassName, monadPlusClassName,
 
         -- Type-level naturals
-        knownNatClassName, knownSymbolClassName,
+        knownNatClassName, knownSymbolClassName, knownCharClassName,
 
         -- Overloaded labels
         isLabelClassName,
@@ -1466,6 +1466,8 @@ knownNatClassName :: Name
 knownNatClassName     = clsQual gHC_TYPENATS (fsLit "KnownNat") knownNatClassNameKey
 knownSymbolClassName :: Name
 knownSymbolClassName  = clsQual gHC_TYPELITS (fsLit "KnownSymbol") knownSymbolClassNameKey
+knownCharClassName :: Name
+knownCharClassName    = clsQual gHC_TYPELITS (fsLit "KnownChar") knownCharClassNameKey
 
 -- Overloaded labels
 isLabelClassName :: Name
@@ -1635,23 +1637,26 @@ knownNatClassNameKey = mkPreludeClassUnique 42
 knownSymbolClassNameKey :: Unique
 knownSymbolClassNameKey = mkPreludeClassUnique 43
 
+knownCharClassNameKey :: Unique
+knownCharClassNameKey = mkPreludeClassUnique 44
+
 ghciIoClassKey :: Unique
-ghciIoClassKey = mkPreludeClassUnique 44
+ghciIoClassKey = mkPreludeClassUnique 45
 
 isLabelClassNameKey :: Unique
-isLabelClassNameKey = mkPreludeClassUnique 45
+isLabelClassNameKey = mkPreludeClassUnique 46
 
 semigroupClassKey, monoidClassKey :: Unique
-semigroupClassKey = mkPreludeClassUnique 46
-monoidClassKey    = mkPreludeClassUnique 47
+semigroupClassKey = mkPreludeClassUnique 47
+monoidClassKey    = mkPreludeClassUnique 48
 
 -- Implicit Parameters
 ipClassKey :: Unique
-ipClassKey = mkPreludeClassUnique 48
+ipClassKey = mkPreludeClassUnique 49
 
 -- Overloaded record fields
 hasFieldClassNameKey :: Unique
-hasFieldClassNameKey = mkPreludeClassUnique 49
+hasFieldClassNameKey = mkPreludeClassUnique 50
 
 
 ---------------- Template Haskell -------------------
@@ -1893,6 +1898,9 @@ someTypeRepDataConKey = mkPreludeTyConUnique 189
 
 typeSymbolAppendFamNameKey :: Unique
 typeSymbolAppendFamNameKey = mkPreludeTyConUnique 190
+
+typeCharCmpTyFamNameKey :: Unique
+typeCharCmpTyFamNameKey = mkPreludeTyConUnique 191
 
 ---------------- Template Haskell -------------------
 --      THNames.hs: USES TyConUniques 200-299

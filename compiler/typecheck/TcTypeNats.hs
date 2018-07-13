@@ -19,6 +19,7 @@ module TcTypeNats
   , typeNatCmpTyCon
   , typeSymbolCmpTyCon
   , typeSymbolAppendTyCon
+  , typeCharCmpTyCon
   ) where
 
 import GhcPrelude
@@ -47,6 +48,7 @@ import PrelNames  ( gHC_TYPELITS
                   , typeNatCmpTyFamNameKey
                   , typeSymbolCmpTyFamNameKey
                   , typeSymbolAppendFamNameKey
+                  , typeCharCmpTyFamNameKey
                   )
 import FastString ( FastString
                   , fsLit, nilFS, nullFS, unpackFS, mkFastString, appendFS
@@ -55,6 +57,8 @@ import qualified Data.Map as Map
 import Data.Maybe ( isJust )
 import Control.Monad ( guard )
 import Data.List  ( isPrefixOf, isSuffixOf )
+
+import Debug.Trace
 
 {-
 Note [Type-level literals]
@@ -149,6 +153,7 @@ typeNatTyCons =
   , typeNatCmpTyCon
   , typeSymbolCmpTyCon
   , typeSymbolAppendTyCon
+  , typeCharCmpTyCon
   ]
 
 typeNatAddTyCon :: TyCon
@@ -302,7 +307,24 @@ typeSymbolAppendTyCon = mkTypeSymbolFunTyCon2 name
   name = mkWiredInTyConName UserSyntax gHC_TYPELITS (fsLit "AppendSymbol")
                 typeSymbolAppendFamNameKey typeSymbolAppendTyCon
 
+typeCharCmpTyCon :: TyCon
+typeCharCmpTyCon =
+  mkFamilyTyCon name
+    (mkTemplateAnonTyConBinders [ charTy, charTy ])
+    orderingKind
+    Nothing
+    (BuiltInSynFamTyCon ops)
+    Nothing
+    NotInjective
 
+  where
+  name = mkWiredInTyConName UserSyntax gHC_TYPELITS (fsLit "CmpChar")
+                typeCharCmpTyFamNameKey typeCharCmpTyCon
+  ops = BuiltInSynFamily
+    { sfMatchFam      = matchFamCmpChar
+    , sfInteractTop   = interactTopCmpChar
+    , sfInteractInert = \_ _ _ _ -> []
+    }
 
 -- Make a unary built-in constructor of kind: Nat -> Nat
 mkTypeNatFunTyCon1 :: Name -> BuiltInSynFamily -> TyCon
@@ -353,6 +375,7 @@ axAddDef
   , axCmpNatDef
   , axCmpSymbolDef
   , axAppendSymbolDef
+  , axCmpCharDef
   , axAdd0L
   , axAdd0R
   , axMul0L
@@ -365,6 +388,7 @@ axAddDef
   , axLeqRefl
   , axCmpNatRefl
   , axCmpSymbolRefl
+  , axCmpCharRefl
   , axLeq0L
   , axSubDef
   , axSub0R
@@ -416,6 +440,18 @@ axAppendSymbolDef = CoAxiomRule
            return (mkTyConApp typeSymbolAppendTyCon [s1, t1] === z)
     }
 
+axCmpCharDef =
+  CoAxiomRule
+    { coaxrName      = fsLit "CmpCharDef"
+    , coaxrAsmpRoles = [Nominal, Nominal]
+    , coaxrRole      = Nominal
+    , coaxrProves    = \cs ->
+        do [Pair s1 s2, Pair t1 t2] <- return cs
+           s2' <- isCharLitTy s2
+           t2' <- isCharLitTy t2
+           return (mkTyConApp typeCharCmpTyCon [s1,t1] ===
+                   ordering (compare s2' t2')) }
+
 axSubDef = mkBinAxiom "SubDef" typeNatSubTyCon $
               \x y -> fmap num (minus x y)
 
@@ -449,6 +485,8 @@ axCmpNatRefl    = mkAxiom1 "CmpNatRefl"
                 $ \(Pair s _) -> (cmpNat s s) === ordering EQ
 axCmpSymbolRefl = mkAxiom1 "CmpSymbolRefl"
                 $ \(Pair s _) -> (cmpSymbol s s) === ordering EQ
+axCmpCharRefl = mkAxiom1 "CmpCharRefl"
+                $ \(Pair s _) -> (cmpChar s s) === ordering EQ
 axLeq0L     = mkAxiom1 "Leq0L"    $ \(Pair s _) -> (num 0 <== s) === bool True
 axAppendSymbol0R  = mkAxiom1 "Concat0R"
             $ \(Pair s t) -> (mkStrLitTy nilFS `appendSymbol` s) === t
@@ -467,6 +505,7 @@ typeNatCoAxiomRules = Map.fromList $ map (\x -> (coaxrName x, x))
   , axCmpNatDef
   , axCmpSymbolDef
   , axAppendSymbolDef
+  , axCmpCharDef
   , axAdd0L
   , axAdd0R
   , axMul0L
@@ -479,6 +518,7 @@ typeNatCoAxiomRules = Map.fromList $ map (\x -> (coaxrName x, x))
   , axLeqRefl
   , axCmpNatRefl
   , axCmpSymbolRefl
+  , axCmpCharRefl
   , axLeq0L
   , axSubDef
   , axSub0R
@@ -526,6 +566,9 @@ cmpSymbol s t = mkTyConApp typeSymbolCmpTyCon [s,t]
 
 appendSymbol :: Type -> Type -> Type
 appendSymbol s t = mkTyConApp typeSymbolAppendTyCon [s, t]
+
+cmpChar :: Type -> Type -> Type
+cmpChar s t = mkTyConApp typeCharCmpTyCon [s,t]
 
 (===) :: Type -> Type -> Pair Type
 x === y = Pair x y
@@ -724,6 +767,15 @@ matchFamAppendSymbol [s,t]
   mbY = isStrLitTy t
 matchFamAppendSymbol _ = Nothing
 
+matchFamCmpChar :: [Type] -> Maybe (CoAxiomRule, [Type], Type)
+matchFamCmpChar [s,t]
+  | Just x <- mbX, Just y <- mbY =
+    Just (axCmpCharDef, [s,t], ordering (compare x y))
+  | tcEqType s t = Just (axCmpCharRefl, [s], ordering EQ)
+  where mbX = isCharLitTy s
+        mbY = isCharLitTy t
+matchFamCmpChar _ = Nothing
+
 {-------------------------------------------------------------------------------
 Interact with axioms
 -------------------------------------------------------------------------------}
@@ -831,6 +883,11 @@ interactTopCmpSymbol :: [Xi] -> Xi -> [Pair Type]
 interactTopCmpSymbol [s,t] r
   | Just EQ <- isOrderingLitTy r = [ s === t ]
 interactTopCmpSymbol _ _ = []
+
+interactTopCmpChar :: [Xi] -> Xi -> [Pair Type]
+interactTopCmpChar [s,t] r
+  | Just EQ <- isOrderingLitTy r = [ s === t ]
+interactTopCmpChar _ _ = []
 
 interactTopAppendSymbol :: [Xi] -> Xi -> [Pair Type]
 interactTopAppendSymbol [s,t] r

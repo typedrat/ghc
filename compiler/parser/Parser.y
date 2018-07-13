@@ -88,9 +88,9 @@ import GhcPrelude
 import qualified GHC.LanguageExtensions as LangExt
 }
 
-%expect 235 -- shift/reduce conflicts
+%expect 236 -- shift/reduce conflicts
 
-{- Last updated: 04 June 2018
+{- Last updated: 12 July 2018
 
 If you modify this parser and add a conflict, please update this comment.
 You can learn more about the conflicts by passing 'happy' the -i flag:
@@ -147,7 +147,7 @@ state 62 contains 46 shift/reduce conflicts.
 
     Conflicts: '_' ':' '~' '!' '.' '`' '{' '[' '[:' '(' '(#' '`' SIMPLEQUOTE
       VARID CONID VARSYM CONSYM QCONID QVARSYM QCONSYM
-      STRING INTEGER TH_ID_SPLICE '$(' TH_QUASIQUOTE TH_QQUASIQUOTE
+      CHAR STRING INTEGER TH_ID_SPLICE '$(' TH_QUASIQUOTE TH_QQUASIQUOTE
       and all the special ids.
 
 Example ambiguity:
@@ -1997,6 +1997,8 @@ atype :: { LHsType GhcPs }
                                                            (il_value (getINTEGER $1)) }
         | STRING               { sLL $1 $> $ HsTyLit noExt $ HsStrTy (getSTRINGs $1)
                                                                      (getSTRING  $1) }
+        | CHAR                 { sLL $1 $> $ HsTyLit noExt $ HsCharTy (getCHARs $1) 
+                                                                      (getCHAR  $1) }
         | '_'                  { sL1 $1 $ mkAnonWildCardTy }
 
 -- An inst_type is what occurs in the head of an instance decl

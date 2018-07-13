@@ -24,7 +24,7 @@ import PrelNames
 import TysPrim ( primTyCons )
 import TysWiredIn ( tupleTyCon, sumTyCon, runtimeRepTyCon
                   , vecCountTyCon, vecElemTyCon
-                  , nilDataCon, consDataCon )
+                  , nilDataCon, consDataCon, charDataCon )
 import Name
 import Id
 import Type
@@ -597,6 +597,11 @@ mkKindRepRhs stuff@(Stuff {..}) in_scope = new_kind_rep
       = return $ nlHsDataCon kindRepTypeLitSDataCon
                  `nlHsApp` nlHsDataCon typeLitSymbolDataCon
                  `nlHsApp` nlHsLit (mkHsStringPrimLit $ mkFastString $ show s)
+
+    new_kind_rep (LitTy (CharTyLit c))
+      = return $ nlHsDataCon kindRepTypeLitSDataCon
+                `nlHsApp` nlHsDataCon charDataCon
+                `nlHsApp` nlHsLit (mkHsStringPrimLit $ mkFastString $ show c)
 
     new_kind_rep (CastTy ty co)
       = pprPanic "mkTyConKindRepBinds.go(cast)" (ppr ty $$ ppr co)

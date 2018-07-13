@@ -618,6 +618,7 @@ rnHsTyKi env tyLit@(HsTyLit _ t)
        ; return (HsTyLit noExt t, emptyFVs) }
   where
     negLit (HsStrTy _ _) = False
+    negLit (HsCharTy _ _) = False
     negLit (HsNumTy _ i) = i < 0
     negLitErr = text "Illegal literal in type (type literals must not be negative):" <+> ppr tyLit
 

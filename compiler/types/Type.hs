@@ -47,6 +47,7 @@ module Type (
 
         mkNumLitTy, isNumLitTy,
         mkStrLitTy, isStrLitTy,
+        mkCharLitTy, isCharLitTy,
 
         getRuntimeRep_maybe, getRuntimeRepFromKind_maybe,
 
@@ -224,7 +225,7 @@ import UniqSet
 import Class
 import TyCon
 import TysPrim
-import {-# SOURCE #-} TysWiredIn ( listTyCon, typeNatKind
+import {-# SOURCE #-} TysWiredIn ( listTyCon, typeNatKind, charTy
                                  , typeSymbolKind, liftedTypeKind )
 import PrelNames
 import CoAxiom
@@ -851,6 +852,14 @@ isStrLitTy :: Type -> Maybe FastString
 isStrLitTy ty | Just ty1 <- coreView ty = isStrLitTy ty1
 isStrLitTy (LitTy (StrTyLit s)) = Just s
 isStrLitTy _                    = Nothing
+
+mkCharLitTy :: Char -> Type
+mkCharLitTy c = LitTy (CharTyLit c)
+
+isCharLitTy :: Type -> Maybe Char
+isCharLitTy ty | Just ty1 <- coreView ty = isCharLitTy ty1
+isCharLitTy (LitTy (CharTyLit c)) = Just c
+isCharLitTy _                     = Nothing
 
 
 -- | Is this type a custom user error?
@@ -2359,8 +2368,9 @@ typeKind_apps fun             args = piResultTys (typeKind fun) args
 typeLiteralKind :: TyLit -> Kind
 typeLiteralKind l =
   case l of
-    NumTyLit _ -> typeNatKind
-    StrTyLit _ -> typeSymbolKind
+    NumTyLit  _ -> typeNatKind
+    StrTyLit  _ -> typeSymbolKind
+    CharTyLit _ -> charTy
 
 -- | Returns True if a type is levity polymorphic. Should be the same
 -- as (isKindLevPoly . typeKind) but much faster.

@@ -670,6 +670,8 @@ typeToLHsType ty
       = noLoc $ HsTyLit NoExt (HsNumTy NoSourceText n)
     go (LitTy (StrTyLit s))
       = noLoc $ HsTyLit NoExt (HsStrTy NoSourceText s)
+    go (LitTy (CharTyLit c))
+      = noLoc $ HsTyLit NoExt (HsCharTy NoSourceText c)
     go ty@(TyConApp tc args)
       | any isInvisibleTyConBinder (tyConBinders tc)
         -- We must produce an explicit kind signature here to make certain

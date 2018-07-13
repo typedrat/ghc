@@ -28,7 +28,7 @@ import PrelNames
 import Id
 import Type
 import Kind( isConstraintKind )
-import MkCore ( mkStringExprFS, mkNaturalExpr )
+import MkCore ( mkStringExprFS, mkNaturalExpr, mkCharExpr )
 
 import Unique ( hasKey )
 import Name   ( Name )
@@ -93,6 +93,7 @@ matchGlobalInst :: DynFlags
 matchGlobalInst dflags short_cut clas tys
   | cls_name == knownNatClassName     = matchKnownNat        clas tys
   | cls_name == knownSymbolClassName  = matchKnownSymbol     clas tys
+  | cls_name == knownCharClassName    = matchKnownChar       clas tys
   | isCTupleClass clas                = matchCTuple          clas tys
   | cls_name == typeableClassName     = matchTypeable        clas tys
   | clas `hasKey` heqTyConKey         = matchLiftedEquality       tys
@@ -252,6 +253,13 @@ matchKnownSymbol clas [ty]  -- clas = KnownSymbol
         et <- mkStringExprFS s
         makeLitDict clas ty et
 matchKnownSymbol _ _       = return NoInstance
+
+matchKnownChar :: Class -> [Type] -> TcM ClsInstResult
+matchKnownChar clas [ty]    -- clas = KnownChar
+  | Just s <- isCharLitTy ty = do
+        let et = mkCharExpr s
+        makeLitDict clas ty et
+matchKnownChar _ _           = return NoInstance
 
 makeLitDict :: Class -> Type -> EvExpr -> TcM ClsInstResult
 -- makeLitDict adds a coercion that will convert the literal into a dictionary

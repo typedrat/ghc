@@ -213,8 +213,9 @@ toIfaceTyCon_name n = IfaceTyCon n info
   -- where pretty-printing is not an issue
 
 toIfaceTyLit :: TyLit -> IfaceTyLit
-toIfaceTyLit (NumTyLit x) = IfaceNumTyLit x
-toIfaceTyLit (StrTyLit x) = IfaceStrTyLit x
+toIfaceTyLit (NumTyLit  x) = IfaceNumTyLit  x
+toIfaceTyLit (StrTyLit  x) = IfaceStrTyLit  x
+toIfaceTyLit (CharTyLit x) = IfaceCharTyLit x
 
 ----------------
 toIfaceCoercion :: Coercion -> IfaceCoercion

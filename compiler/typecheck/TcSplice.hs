@@ -1745,6 +1745,7 @@ reify_for_all ty
 reifyTyLit :: TyCoRep.TyLit -> TcM TH.TyLit
 reifyTyLit (NumTyLit n) = return (TH.NumTyLit n)
 reifyTyLit (StrTyLit s) = return (TH.StrTyLit (unpackFS s))
+reifyTyLit (CharTyLit _) = noTH (sLit "character types") empty
 
 reifyTypes :: [Type] -> TcM [TH.Type]
 reifyTypes = mapM reifyType
