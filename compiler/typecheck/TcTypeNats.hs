@@ -21,6 +21,7 @@ module TcTypeNats
   , typeSymbolAppendTyCon
   , typeCharCmpTyCon
   , typeSymbolToStringTyCon
+  , typeStringToSymbolTyCon
   ) where
 
 import GhcPrelude
@@ -51,10 +52,12 @@ import PrelNames  ( gHC_TYPELITS
                   , typeSymbolAppendFamNameKey
                   , typeCharCmpTyFamNameKey
                   , typeSymbolToStringTyFamNameKey
+                  , typeStringToSymbolTyFamNameKey
                   )
 import FastString ( FastString
                   , fsLit, nilFS, nullFS, unpackFS, mkFastString, appendFS
                   )
+import Outputable ( ppr, pprPanic )
 import qualified Data.Map as Map
 import Data.Maybe ( isJust )
 import Control.Monad ( guard )
@@ -155,6 +158,7 @@ typeNatTyCons =
   , typeSymbolAppendTyCon
   , typeCharCmpTyCon
   , typeSymbolToStringTyCon
+  , typeStringToSymbolTyCon
   ]
 
 typeNatAddTyCon :: TyCon
@@ -346,6 +350,25 @@ typeSymbolToStringTyCon =
     , sfInteractInert = \_ _ _ _ -> []
     }
 
+typeStringToSymbolTyCon :: TyCon
+typeStringToSymbolTyCon =
+  mkFamilyTyCon name
+    (mkTemplateAnonTyConBinders [ mkListTy charTy ])
+    typeSymbolKind
+    Nothing
+    (BuiltInSynFamTyCon ops)
+    Nothing
+    NotInjective
+
+  where
+  name = mkWiredInTyConName UserSyntax gHC_TYPELITS (fsLit "StringToSymbol")
+                typeStringToSymbolTyFamNameKey typeStringToSymbolTyCon
+  ops = BuiltInSynFamily
+    { sfMatchFam      = matchFamStringToSymbol
+    , sfInteractTop   = interactTopStringToSymbol
+    , sfInteractInert = \_ _ _ _ -> []
+    }
+
 -- Make a unary built-in constructor of kind: Nat -> Nat
 mkTypeNatFunTyCon1 :: Name -> BuiltInSynFamily -> TyCon
 mkTypeNatFunTyCon1 op tcb =
@@ -397,6 +420,7 @@ axAddDef
   , axAppendSymbolDef
   , axCmpCharDef
   , axSymbolToStringDef
+  , axStringToSymbolDef
   , axAdd0L
   , axAdd0R
   , axMul0L
@@ -484,6 +508,17 @@ axSymbolToStringDef =
          return (symbolToString s1 ===
                  mkPromotedStringTy (unpackFS s2')) }
 
+axStringToSymbolDef =
+  CoAxiomRule
+  { coaxrName      = fsLit "StringToSymbolDef"
+  , coaxrAsmpRoles = [Nominal]
+  , coaxrRole      = Nominal
+  , coaxrProves    = \cs ->
+      do [Pair s1 s2] <- return cs
+         s2' <- isPromotedStringTy s2
+         return (stringToSymbol s1 ===
+                 mkStrLitTy (mkFastString s2')) }
+
 axSubDef = mkBinAxiom "SubDef" typeNatSubTyCon $
               \x y -> fmap num (minus x y)
 
@@ -539,6 +574,7 @@ typeNatCoAxiomRules = Map.fromList $ map (\x -> (coaxrName x, x))
   , axAppendSymbolDef
   , axCmpCharDef
   , axSymbolToStringDef
+  , axStringToSymbolDef
   , axAdd0L
   , axAdd0R
   , axMul0L
@@ -606,8 +642,31 @@ cmpChar s t = mkTyConApp typeCharCmpTyCon [s,t]
 symbolToString :: Type -> Type
 symbolToString s = mkTyConApp typeSymbolToStringTyCon [s]
 
+stringToSymbol :: Type -> Type
+stringToSymbol s = mkTyConApp typeStringToSymbolTyCon [s]
+
 mkPromotedStringTy :: String -> Type
 mkPromotedStringTy = mkPromotedListTy charTy . fmap mkCharLitTy
+
+unPromotedStringTy :: Type -> String
+unPromotedStringTy = fmap toChar . extractPromotedList
+  where
+    toChar ty 
+      | Just c <- isCharLitTy ty = c 
+      | otherwise = pprPanic "unPromotedStringTy" (ppr ty)
+
+isPromotedStringTy :: Type -> Maybe String
+isPromotedStringTy ty = splitTyConApp_maybe ty >>= \case 
+  (tc, [k])
+    | tc == promotedNilDataCon
+    , Just kc <- tyConAppTyCon_maybe k
+    , kc == charTyCon -> Just ""
+  (tc, [k, _t, _ts])
+    | tc == promotedConsDataCon
+    , Just kc <- tyConAppTyCon_maybe k
+    , kc == charTyCon -> Just (unPromotedStringTy ty)
+  _ -> Nothing
+
 
 (===) :: Type -> Type -> Pair Type
 x === y = Pair x y
@@ -822,6 +881,14 @@ matchFamSymbolToString [s]
     mbX = isStrLitTy s
 matchFamSymbolToString _ = Nothing
 
+matchFamStringToSymbol :: [Type] -> Maybe (CoAxiomRule, [Type], Type)
+matchFamStringToSymbol [s]
+  | Just x <- mbX = Just (axStringToSymbolDef, [s], mkStrLitTy (mkFastString x))
+  where
+    mbX = isPromotedStringTy s
+matchFamStringToSymbol _ = Nothing
+
+
 {-------------------------------------------------------------------------------
 Interact with axioms
 -------------------------------------------------------------------------------}
@@ -958,6 +1025,9 @@ interactTopAppendSymbol _ _ = []
 
 interactTopSymbolToString :: [Xi] -> Xi -> [Pair Type]
 interactTopSymbolToString _ _ = []
+
+interactTopStringToSymbol :: [Xi] -> Xi -> [Pair Type]
+interactTopStringToSymbol _ _ = []
 
 {-------------------------------------------------------------------------------
 Interaction with inerts
