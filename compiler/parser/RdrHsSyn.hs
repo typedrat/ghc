@@ -1320,15 +1320,25 @@ data TyEl = TyElOpr RdrName | TyElOpd (HsType GhcPs)
 mergeOps :: [Located TyEl] -> P (LHsType GhcPs)
 mergeOps = go [] id
   where
+    typeLevelNegation opLoc (L litLoc (HsTyLit _ lit)) 
+      | HsNumTy _ num <- lit
+      , let lit' = HsNumTy NoSourceText (negate num) = 
+        return (L outLoc (HsTyLit noExt lit'))
+      where
+        outLoc = opLoc `combineSrcSpans` litLoc
+    typeLevelNegation opLoc _ = failOpFewArgs (L opLoc minus_RDR)
+
+    minus_RDR = mkUnqual tcName (fsLit "-")
+
     -- clause (a):
     -- when we encounter an operator, we must have accumulated
     -- something for its rhs, and there must be something left
     -- to build its lhs.
-    go acc ops_acc (L l (TyElOpr op):xs) =
-      if null acc || null xs
-        then failOpFewArgs (L l op)
-        else do { a <- splitTilde acc
-                ; go [] (\c -> mkLHsOpTy c (L l op) (ops_acc a)) xs }
+    go acc ops_acc (L l (TyElOpr op):xs) 
+      | null xs, op == minus_RDR, [ty] <- acc = typeLevelNegation l (ops_acc ty)
+      | null acc || null xs = failOpFewArgs (L l op)
+      | otherwise = do { a <- splitTilde acc
+                       ; go [] (\c -> mkLHsOpTy c (L l op) (ops_acc a)) xs }
 
     -- clause (b):
     -- whenever an operand is encountered, it is added to the accumulator
