@@ -34,12 +34,12 @@ module GHC.TypeNats
   , type (<=), type (<=?), type (+), type (*), type (^), type (-)
   , CmpNat
   , Div, Mod, Log2
-
+  , FromInteger
   ) where
 
 import GHC.Base(Eq(..), Ord(..), Bool(True), Ordering(..), otherwise)
-import GHC.Types( Nat )
 import GHC.Natural(Natural)
+import GHC.Integer(Integer)
 import GHC.Show(Show(..))
 import GHC.Read(Read(..))
 import GHC.Prim(magicDict, Proxy#)
@@ -47,6 +47,8 @@ import Data.Maybe(Maybe(..))
 import Data.Proxy (Proxy(..))
 import Data.Type.Equality((:~:)(Refl))
 import Unsafe.Coerce(unsafeCoerce)
+
+type Nat = Natural
 
 --------------------------------------------------------------------------------
 
@@ -155,6 +157,12 @@ type family Mod (m :: Nat) (n :: Nat) :: Nat
 --
 -- @since 4.11.0.0
 type family Log2 (m :: Nat) :: Nat
+
+type family IntToNat (m :: Integer) :: Natural
+
+type family FromInteger (m :: Integer) :: a
+type instance FromInteger m = IntToNat m
+type instance FromInteger m = m
 
 --------------------------------------------------------------------------------
 

@@ -47,7 +47,7 @@ module GHC.TypeLits
   ) where
 
 import GHC.Base(Eq(..), Ord(..), Ordering(..), otherwise)
-import GHC.Types( Char, Nat, Symbol )
+import GHC.Types( Char, Symbol )
 import GHC.Num(Integer, fromInteger)
 import GHC.Base(String)
 import GHC.Show(Show(..))
@@ -59,7 +59,7 @@ import Data.Proxy (Proxy(..))
 import Data.Type.Equality((:~:)(Refl))
 import Unsafe.Coerce(unsafeCoerce)
 
-import GHC.TypeNats (KnownNat)
+import GHC.TypeNats (Nat, KnownNat)
 import qualified GHC.TypeNats as N
 
 --------------------------------------------------------------------------------

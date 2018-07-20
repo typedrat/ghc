@@ -609,8 +609,14 @@ rnHsTyKi env sumTy@(HsSumTy _ tys)
        ; (tys', fvs) <- mapFvRn (rnLHsTyKi env) tys
        ; return (HsSumTy noExt tys', fvs) }
 
--- Ensure that a type-level integer is nonnegative (#8306, #8412)
--- (No check any more, now ensured by types)
+rnHsTyKi env tyLit@(HsTyLit _ intTy@(HsIntTy _ _))
+  = do { data_kinds <- xoptM LangExt.DataKinds
+       ; unless data_kinds (addErr (dataKindsErr env tyLit))
+       ; checkPolyKinds env tyLit
+       ; let fromInteger_RDR = nameRdrName fromIntegerTyFamName
+       ; fromIntegerVar <- rnTyVar env fromInteger_RDR
+       ; return (HsAppTy noExt (noLoc (HsTyVar noExt NotPromoted (noLoc fromIntegerTyFamName))) (noLoc (HsTyLit noExt intTy)), unitFV fromIntegerVar) }
+
 rnHsTyKi env tyLit@(HsTyLit _ t)
   = do { data_kinds <- xoptM LangExt.DataKinds
        ; unless data_kinds (addErr (dataKindsErr env tyLit))

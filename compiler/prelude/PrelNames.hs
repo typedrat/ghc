@@ -352,6 +352,7 @@ basicKnownKeyNames
         gcdIntegerName, lcmIntegerName,
         andIntegerName, orIntegerName, xorIntegerName, complementIntegerName,
         shiftLIntegerName, shiftRIntegerName, bitIntegerName,
+        fromIntegerTyFamName,
 
         -- Natural
         naturalFromIntegerName, naturalToIntegerName,
@@ -1518,6 +1519,9 @@ fingerprintDataConName =
 eqTyConName :: Name
 eqTyConName        = tcQual dATA_TYPE_EQUALITY (fsLit "~")         eqTyConKey
 
+fromIntegerTyFamName :: Name
+fromIntegerTyFamName = tcQual gHC_TYPENATS (fsLit "FromInteger")   fromIntegerTyFamNameKey
+
 {-
 ************************************************************************
 *                                                                      *
@@ -1817,7 +1821,7 @@ uIntTyConKey    = mkPreludeTyConUnique 162
 uWordTyConKey   = mkPreludeTyConUnique 163
 
 -- Type-level naturals
-typeNatKindConNameKey, typeSymbolKindConNameKey,
+typeSymbolKindConNameKey,
   typeNatAddTyFamNameKey, typeNatMulTyFamNameKey, typeNatExpTyFamNameKey,
   typeNatLeqTyFamNameKey, typeNatSubTyFamNameKey
   , typeSymbolCmpTyFamNameKey, typeNatCmpTyFamNameKey
@@ -1825,7 +1829,6 @@ typeNatKindConNameKey, typeSymbolKindConNameKey,
   , typeNatModTyFamNameKey
   , typeNatLogTyFamNameKey
   :: Unique
-typeNatKindConNameKey     = mkPreludeTyConUnique 164
 typeSymbolKindConNameKey  = mkPreludeTyConUnique 165
 typeNatAddTyFamNameKey    = mkPreludeTyConUnique 166
 typeNatMulTyFamNameKey    = mkPreludeTyConUnique 167
@@ -1904,6 +1907,12 @@ simpleDigitsTyConKey = mkPreludeTyConUnique 195
 -----------------------------------------------------
 
 #include "primop-vector-uniques.hs-incl"
+
+fromIntegerTyFamNameKey :: Unique
+fromIntegerTyFamNameKey = mkPreludeTyConUnique 400
+
+typeIntToNatTyFamNameKey :: Unique
+typeIntToNatTyFamNameKey = mkPreludeTyConUnique 401
 
 {-
 ************************************************************************

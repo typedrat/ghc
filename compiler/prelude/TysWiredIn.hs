@@ -93,7 +93,7 @@ module TysWiredIn (
         mkSumTy, sumTyCon, sumDataCon,
 
         -- * Kinds
-        typeNatKindCon, typeNatKind, typeSymbolKindCon, typeSymbolKind,
+        typeSymbolKindCon, typeSymbolKind,
         isLiftedTypeKindTyConName, liftedTypeKind, constraintKind,
         liftedTypeKindTyCon, constraintKindTyCon,
         liftedTypeKindTyConName,
@@ -223,7 +223,6 @@ wiredInTyCons = [ -- Units are not treated like other tuples, because then
                 , maybeTyCon
                 , heqTyCon
                 , coercibleTyCon
-                , typeNatKindCon
                 , typeSymbolKindCon
                 , runtimeRepTyCon
                 , vecCountTyCon
@@ -388,8 +387,7 @@ anyTypeOfKind :: Kind -> Type
 anyTypeOfKind kind = mkTyConApp anyTyCon [kind]
 
 -- Kinds
-typeNatKindConName, typeSymbolKindConName :: Name
-typeNatKindConName    = mkWiredInTyConName UserSyntax gHC_TYPES (fsLit "Nat")    typeNatKindConNameKey    typeNatKindCon
+typeSymbolKindConName :: Name
 typeSymbolKindConName = mkWiredInTyConName UserSyntax gHC_TYPES (fsLit "Symbol") typeSymbolKindConNameKey typeSymbolKindCon
 
 constraintKindTyConName :: Name
@@ -560,14 +558,11 @@ pcSpecialDataCon dc_name arg_tys tycon rri
 ************************************************************************
 -}
 
-typeNatKindCon, typeSymbolKindCon :: TyCon
--- data Nat
+typeSymbolKindCon :: TyCon
 -- data Symbol
-typeNatKindCon    = pcTyCon typeNatKindConName    Nothing [] []
 typeSymbolKindCon = pcTyCon typeSymbolKindConName Nothing [] []
 
-typeNatKind, typeSymbolKind :: Kind
-typeNatKind    = mkTyConTy typeNatKindCon
+typeSymbolKind :: Kind
 typeSymbolKind = mkTyConTy typeSymbolKindCon
 
 constraintKindTyCon :: TyCon

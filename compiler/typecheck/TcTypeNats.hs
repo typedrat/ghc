@@ -22,6 +22,7 @@ module TcTypeNats
   , typeCharCmpTyCon
   , typeSymbolToStringTyCon
   , typeStringToSymbolTyCon
+  , typeIntToNatTyCon
   ) where
 
 import GhcPrelude
@@ -53,6 +54,7 @@ import PrelNames  ( gHC_TYPELITS
                   , typeCharCmpTyFamNameKey
                   , typeSymbolToStringTyFamNameKey
                   , typeStringToSymbolTyFamNameKey
+                  , typeIntToNatTyFamNameKey
                   )
 import FastString ( FastString
                   , fsLit, nilFS, nullFS, unpackFS, mkFastString, appendFS
@@ -60,7 +62,7 @@ import FastString ( FastString
 import Outputable ( ppr, pprPanic )
 import qualified Data.Map as Map
 import Data.Maybe ( isJust )
-import Control.Monad ( guard )
+import Control.Monad ( mzero, guard )
 import Data.List  ( isPrefixOf, isSuffixOf )
 
 {-
@@ -247,7 +249,7 @@ typeNatLogTyCon = mkTypeNatFunTyCon1 name
 typeNatLeqTyCon :: TyCon
 typeNatLeqTyCon =
   mkFamilyTyCon name
-    (mkTemplateAnonTyConBinders [ typeNatKind, typeNatKind ])
+    (mkTemplateAnonTyConBinders [ naturalTy, naturalTy ])
     boolTy
     Nothing
     (BuiltInSynFamTyCon ops)
@@ -266,7 +268,7 @@ typeNatLeqTyCon =
 typeNatCmpTyCon :: TyCon
 typeNatCmpTyCon =
   mkFamilyTyCon name
-    (mkTemplateAnonTyConBinders [ typeNatKind, typeNatKind ])
+    (mkTemplateAnonTyConBinders [ naturalTy, naturalTy ])
     orderingKind
     Nothing
     (BuiltInSynFamTyCon ops)
@@ -369,12 +371,31 @@ typeStringToSymbolTyCon =
     , sfInteractInert = \_ _ _ _ -> []
     }
 
+typeIntToNatTyCon :: TyCon
+typeIntToNatTyCon =
+  mkFamilyTyCon name
+    (mkTemplateAnonTyConBinders [ integerTy ])
+    naturalTy
+    Nothing
+    (BuiltInSynFamTyCon ops)
+    Nothing
+    NotInjective
+
+  where
+  name = mkWiredInTyConName UserSyntax gHC_TYPENATS (fsLit "IntToNat")
+                typeIntToNatTyFamNameKey typeIntToNatTyCon
+  ops = BuiltInSynFamily
+    { sfMatchFam      = matchFamIntToNat
+    , sfInteractTop   = interactTopIntToNat
+    , sfInteractInert = \_ _ _ _ -> []
+    }
+
 -- Make a unary built-in constructor of kind: Nat -> Nat
 mkTypeNatFunTyCon1 :: Name -> BuiltInSynFamily -> TyCon
 mkTypeNatFunTyCon1 op tcb =
   mkFamilyTyCon op
-    (mkTemplateAnonTyConBinders [ typeNatKind ])
-    typeNatKind
+    (mkTemplateAnonTyConBinders [ naturalTy ])
+    naturalTy
     Nothing
     (BuiltInSynFamTyCon tcb)
     Nothing
@@ -385,8 +406,8 @@ mkTypeNatFunTyCon1 op tcb =
 mkTypeNatFunTyCon2 :: Name -> BuiltInSynFamily -> TyCon
 mkTypeNatFunTyCon2 op tcb =
   mkFamilyTyCon op
-    (mkTemplateAnonTyConBinders [ typeNatKind, typeNatKind ])
-    typeNatKind
+    (mkTemplateAnonTyConBinders [ naturalTy, naturalTy ])
+    naturalTy
     Nothing
     (BuiltInSynFamTyCon tcb)
     Nothing
@@ -421,6 +442,7 @@ axAddDef
   , axCmpCharDef
   , axSymbolToStringDef
   , axStringToSymbolDef
+  , axIntToNatDef
   , axAdd0L
   , axAdd0R
   , axMul0L
@@ -519,6 +541,20 @@ axStringToSymbolDef =
          return (stringToSymbol s1 ===
                  mkStrLitTy (mkFastString s2')) }
 
+axIntToNatDef =
+  CoAxiomRule
+  { coaxrName      = fsLit "IntToNatDef"
+  , coaxrAsmpRoles = [Nominal]
+  , coaxrRole      = Nominal
+  , coaxrProves    = \cs ->
+      do [Pair s1 s2] <- return cs
+         s2' <- isIntLitTy s2
+         if s2' >= 0
+           then return (intToNat s1 ===
+                        mkNumLitTy (fromInteger s2'))
+           else mzero
+  }
+
 axSubDef = mkBinAxiom "SubDef" typeNatSubTyCon $
               \x y -> fmap num (minus x y)
 
@@ -575,6 +611,7 @@ typeNatCoAxiomRules = Map.fromList $ map (\x -> (coaxrName x, x))
   , axCmpCharDef
   , axSymbolToStringDef
   , axStringToSymbolDef
+  , axIntToNatDef
   , axAdd0L
   , axAdd0R
   , axMul0L
@@ -644,6 +681,9 @@ symbolToString s = mkTyConApp typeSymbolToStringTyCon [s]
 
 stringToSymbol :: Type -> Type
 stringToSymbol s = mkTyConApp typeStringToSymbolTyCon [s]
+
+intToNat :: Type -> Type
+intToNat s = mkTyConApp typeIntToNatTyCon [s]
 
 mkPromotedStringTy :: String -> Type
 mkPromotedStringTy = mkPromotedListTy charTy . fmap mkCharLitTy
@@ -888,6 +928,12 @@ matchFamStringToSymbol [s]
     mbX = isPromotedStringTy s
 matchFamStringToSymbol _ = Nothing
 
+matchFamIntToNat :: [Type] -> Maybe (CoAxiomRule, [Type], Type)
+matchFamIntToNat [s]
+  | Just x <- mbX, x >= 0 = Just (axIntToNatDef, [s], mkNumLitTy (fromInteger x))
+  where
+    mbX = isIntLitTy s
+matchFamIntToNat _ = Nothing
 
 {-------------------------------------------------------------------------------
 Interact with axioms
@@ -1028,6 +1074,9 @@ interactTopSymbolToString _ _ = []
 
 interactTopStringToSymbol :: [Xi] -> Xi -> [Pair Type]
 interactTopStringToSymbol _ _ = []
+
+interactTopIntToNat :: [Xi] -> Xi -> [Pair Type]
+interactTopIntToNat _ _ = []
 
 {-------------------------------------------------------------------------------
 Interaction with inerts
