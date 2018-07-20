@@ -1743,7 +1743,8 @@ reify_for_all ty
     (tvs, cxt, tau) = tcSplitSigmaTy ty
 
 reifyTyLit :: TyCoRep.TyLit -> TcM TH.TyLit
-reifyTyLit (NumTyLit n) = return (TH.NumTyLit n)
+reifyTyLit (NumTyLit n) = return (TH.NumTyLit (toInteger n))
+reifyTyLit (IntTyLit _) = noTH (sLit "integer types") empty
 reifyTyLit (StrTyLit s) = return (TH.StrTyLit (unpackFS s))
 reifyTyLit (CharTyLit _) = noTH (sLit "character types") empty
 

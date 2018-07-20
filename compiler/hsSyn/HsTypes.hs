@@ -718,7 +718,8 @@ type instance XXType         (GhcPass _) = NewHsTypeX
 -- the following
 -- | Haskell Type Literal
 data HsTyLit
-  = HsNumTy  SourceText Integer
+  = HsNumTy  SourceText Natural
+  | HsIntTy  SourceText Integer
   | HsStrTy  SourceText FastString
   | HsCharTy SourceText Char
     deriving Data
@@ -1450,7 +1451,8 @@ ppr_fun_ty ty1 ty2
 
 --------------------------
 ppr_tylit :: HsTyLit -> SDoc
-ppr_tylit (HsNumTy  _ i) = integer i
+ppr_tylit (HsNumTy  _ n) = integer (toInteger n)
+ppr_tylit (HsIntTy  _ i) = integer i
 ppr_tylit (HsStrTy  _ s) = text (show s)
 ppr_tylit (HsCharTy _ c) = text (show c)
 

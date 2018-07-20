@@ -671,7 +671,7 @@ isPromotedStringTy ty = splitTyConApp_maybe ty >>= \case
 (===) :: Type -> Type -> Pair Type
 x === y = Pair x y
 
-num :: Integer -> Type
+num :: Natural -> Type
 num = mkNumLitTy
 
 bool :: Bool -> Type
@@ -705,13 +705,13 @@ isOrderingLitTy tc =
          | tc1 == promotedGTDataCon -> return GT
          | otherwise                -> Nothing
 
-known :: (Integer -> Bool) -> TcType -> Bool
+known :: (Natural -> Bool) -> TcType -> Bool
 known p x = case isNumLitTy x of
               Just a  -> p a
               Nothing -> False
 
 
-mkUnAxiom :: String -> TyCon -> (Integer -> Maybe Type) -> CoAxiomRule
+mkUnAxiom :: String -> TyCon -> (Natural -> Maybe Type) -> CoAxiomRule
 mkUnAxiom str tc f =
   CoAxiomRule
     { coaxrName      = fsLit str
@@ -728,7 +728,7 @@ mkUnAxiom str tc f =
 
 -- For the definitional axioms
 mkBinAxiom :: String -> TyCon ->
-              (Integer -> Integer -> Maybe Type) -> CoAxiomRule
+              (Natural -> Natural -> Maybe Type) -> CoAxiomRule
 mkBinAxiom str tc f =
   CoAxiomRule
     { coaxrName      = fsLit str
@@ -1100,18 +1100,18 @@ concrete natural numbers.
 ----------------------------------------------------------------------------- -}
 
 -- | Subtract two natural numbers.
-minus :: Integer -> Integer -> Maybe Integer
+minus :: Natural -> Natural -> Maybe Natural
 minus x y = if x >= y then Just (x - y) else Nothing
 
 -- | Compute the exact logarithm of a natural number.
 -- The logarithm base is the second argument.
-logExact :: Integer -> Integer -> Maybe Integer
+logExact :: Natural -> Natural -> Maybe Natural
 logExact x y = do (z,True) <- genLog x y
                   return z
 
 
 -- | Divide two natural numbers.
-divide :: Integer -> Integer -> Maybe Integer
+divide :: Natural -> Natural -> Maybe Natural
 divide _ 0  = Nothing
 divide x y  = case divMod x y of
                 (a,0) -> Just a
@@ -1119,7 +1119,7 @@ divide x y  = case divMod x y of
 
 -- | Compute the exact root of a natural number.
 -- The second argument specifies which root we are computing.
-rootExact :: Integer -> Integer -> Maybe Integer
+rootExact :: Natural -> Natural -> Maybe Natural
 rootExact x y = do (z,True) <- genRoot x y
                    return z
 
@@ -1129,7 +1129,7 @@ rootExact x y = do (z,True) <- genRoot x y
 the closest natural number.  The boolean indicates if the result
 is exact (i.e., True means no rounding was done, False means rounded down).
 The second argument specifies which root we are computing. -}
-genRoot :: Integer -> Integer -> Maybe (Integer, Bool)
+genRoot :: Natural -> Natural -> Maybe (Natural, Bool)
 genRoot _  0    = Nothing
 genRoot x0 1    = Just (x0, True)
 genRoot x0 root = Just (search 0 (x0+1))
@@ -1144,10 +1144,10 @@ genRoot x0 root = Just (search 0 (x0+1))
                            | otherwise  -> (from, False)
 
 {- | Compute the logarithm of a number in the given base, rounded down to the
-closest integer.  The boolean indicates if we the result is exact
+closest Natural.  The boolean indicates if we the result is exact
 (i.e., True means no rounding happened, False means we rounded down).
 The logarithm base is the second argument. -}
-genLog :: Integer -> Integer -> Maybe (Integer, Bool)
+genLog :: Natural -> Natural -> Maybe (Natural, Bool)
 genLog x 0    = if x == 1 then Just (0, True) else Nothing
 genLog _ 1    = Nothing
 genLog 0 _    = Nothing

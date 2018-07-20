@@ -1993,7 +1993,7 @@ atype :: { LHsType GhcPs }
                                                            (gl $3) >>
                                              ams (sLL $1 $> $ HsExplicitListTy noExt NotPromoted ($2 : $4))
                                                  [mos $1,mcs $5] }
-        | INTEGER              { sLL $1 $> $ HsTyLit noExt $ HsNumTy (getINTEGERs $1)
+        | INTEGER              { sLL $1 $> $ HsTyLit noExt $ HsIntTy (getINTEGERs $1)
                                                            (il_value (getINTEGER $1)) }
         | STRING               { sLL $1 $> $ HsTyLit noExt $ HsStrTy (getSTRINGs $1)
                                                                      (getSTRING  $1) }

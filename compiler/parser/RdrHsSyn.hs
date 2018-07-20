@@ -1321,8 +1321,8 @@ mergeOps :: [Located TyEl] -> P (LHsType GhcPs)
 mergeOps = go [] id
   where
     typeLevelNegation opLoc (L litLoc (HsTyLit _ lit)) 
-      | HsNumTy _ num <- lit
-      , let lit' = HsNumTy NoSourceText (negate num) = 
+      | HsIntTy _ num <- lit
+      , let lit' = HsIntTy NoSourceText (negate num) = 
         return (L outLoc (HsTyLit noExt lit'))
       where
         outLoc = opLoc `combineSrcSpans` litLoc

@@ -593,6 +593,11 @@ mkKindRepRhs stuff@(Stuff {..}) in_scope = new_kind_rep
                  `nlHsApp` nlHsDataCon typeLitNatDataCon
                  `nlHsApp` nlHsLit (mkHsStringPrimLit $ mkFastString $ show n)
 
+    new_kind_rep (LitTy (IntTyLit n))
+      = return $ nlHsDataCon kindRepTypeLitSDataCon
+                 `nlHsApp` nlHsDataCon typeLitNatDataCon
+                 `nlHsApp` nlHsLit (mkHsStringPrimLit $ mkFastString $ show n)
+
     new_kind_rep (LitTy (StrTyLit s))
       = return $ nlHsDataCon kindRepTypeLitSDataCon
                  `nlHsApp` nlHsDataCon typeLitSymbolDataCon

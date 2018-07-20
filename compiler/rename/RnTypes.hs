@@ -610,17 +610,12 @@ rnHsTyKi env sumTy@(HsSumTy _ tys)
        ; return (HsSumTy noExt tys', fvs) }
 
 -- Ensure that a type-level integer is nonnegative (#8306, #8412)
+-- (No check any more, now ensured by types)
 rnHsTyKi env tyLit@(HsTyLit _ t)
   = do { data_kinds <- xoptM LangExt.DataKinds
        ; unless data_kinds (addErr (dataKindsErr env tyLit))
-       ; when (negLit t) (addErr negLitErr)
        ; checkPolyKinds env tyLit
        ; return (HsTyLit noExt t, emptyFVs) }
-  where
-    negLit (HsStrTy _ _) = False
-    negLit (HsCharTy _ _) = False
-    negLit (HsNumTy _ i) = i < 0
-    negLitErr = text "Illegal literal in type (type literals must not be negative):" <+> ppr tyLit
 
 rnHsTyKi env (HsAppTy _ ty1 ty2)
   = do { (ty1', fvs1) <- rnLHsTyKi env ty1

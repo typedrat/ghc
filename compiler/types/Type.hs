@@ -46,6 +46,7 @@ module Type (
         applyTysX, dropForAlls,
 
         mkNumLitTy, isNumLitTy,
+        mkIntLitTy, isIntLitTy,
         mkStrLitTy, isStrLitTy,
         mkCharLitTy, isCharLitTy,
 
@@ -225,7 +226,7 @@ import UniqSet
 import Class
 import TyCon
 import TysPrim
-import {-# SOURCE #-} TysWiredIn ( listTyCon, integerTy, charTy
+import {-# SOURCE #-} TysWiredIn ( listTyCon, integerTy, naturalTy, charTy
                                  , typeSymbolKind, liftedTypeKind )
 import PrelNames
 import CoAxiom
@@ -835,17 +836,26 @@ repSplitAppTys ty = split ty []
                       ~~~~~
 -}
 
-mkNumLitTy :: Integer -> Type
+mkNumLitTy :: Natural -> Type
 mkNumLitTy n = LitTy (NumTyLit n)
 
--- | Is this a numeric literal. We also look through type synonyms.
-isNumLitTy :: Type -> Maybe Integer
+-- | Is this a natural literal. We also look through type synonyms.
+isNumLitTy :: Type -> Maybe Natural
 isNumLitTy ty | Just ty1 <- coreView ty = isNumLitTy ty1
 isNumLitTy (LitTy (NumTyLit n)) = Just n
 isNumLitTy _                    = Nothing
 
 mkStrLitTy :: FastString -> Type
 mkStrLitTy s = LitTy (StrTyLit s)
+
+mkIntLitTy :: Integer -> Type
+mkIntLitTy n = LitTy (IntTyLit n)
+
+-- | Is this a integer literal. We also look through type synonyms.
+isIntLitTy :: Type -> Maybe Integer
+isIntLitTy ty | Just ty1 <- coreView ty = isIntLitTy ty1
+isIntLitTy (LitTy (IntTyLit n)) = Just n
+isIntLitTy _                    = Nothing
 
 -- | Is this a symbol literal. We also look through type synonyms.
 isStrLitTy :: Type -> Maybe FastString
@@ -2368,7 +2378,8 @@ typeKind_apps fun             args = piResultTys (typeKind fun) args
 typeLiteralKind :: TyLit -> Kind
 typeLiteralKind l =
   case l of
-    NumTyLit  _ -> integerTy
+    NumTyLit  _ -> naturalTy
+    IntTyLit  _ -> integerTy
     StrTyLit  _ -> typeSymbolKind
     CharTyLit _ -> charTy
 

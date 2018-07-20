@@ -1358,7 +1358,7 @@ lintType t@(ForAllTy (TvBndr tv _vis) ty)
                                             , text "kind:" <+> ppr k ]))
     }}
 
-lintType ty@(LitTy l) = lintTyLit l >> return (typeKind ty)
+lintType ty@(LitTy _) = return (typeKind ty)
 
 lintType (CastTy ty co)
   = do { k1 <- lintType ty
@@ -1450,14 +1450,6 @@ lint_co_app ty k tys
   = lint_app (text "coercion" <+> quotes (ppr ty)) k tys
 
 ----------------
-lintTyLit :: TyLit -> LintM ()
-lintTyLit (NumTyLit n)
-  | n >= 0    = return ()
-  | otherwise = failWithL msg
-    where msg = text "Negative type literal:" <+> integer n
-lintTyLit (StrTyLit _) = return ()
-lintTyLit (CharTyLit _) = return ()
-
 lint_app :: SDoc -> LintedKind -> [(LintedType,LintedKind)] -> LintM Kind
 -- (lint_app d fun_kind arg_tys)
 --    We have an application (f arg_ty1 .. arg_tyn),

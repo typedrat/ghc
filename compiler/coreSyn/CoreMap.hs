@@ -595,9 +595,10 @@ fdT k m = foldTM k (tm_var m)
         . foldMaybe k (tm_coerce m)
 
 ------------------------
-data TyLitMap a = TLM { tlm_number :: Map.Map Integer a
-                      , tlm_string :: Map.Map FastString a
-                      , tlm_char   :: Map.Map Char a
+data TyLitMap a = TLM { tlm_number  :: Map.Map Natural a
+                      , tlm_integer :: Map.Map Integer a
+                      , tlm_string  :: Map.Map FastString a
+                      , tlm_char    :: Map.Map Char a
                       }
 
 instance TrieMap TyLitMap where
@@ -610,37 +611,42 @@ instance TrieMap TyLitMap where
 
 emptyTyLitMap :: TyLitMap a
 emptyTyLitMap = TLM 
-  { tlm_number = Map.empty
-  , tlm_string = Map.empty
-  , tlm_char   = Map.empty
+  { tlm_number  = Map.empty
+  , tlm_integer = Map.empty
+  , tlm_string  = Map.empty
+  , tlm_char    = Map.empty
   }
 
 mapTyLit :: (a->b) -> TyLitMap a -> TyLitMap b
-mapTyLit f (TLM { tlm_number = tn, tlm_string = ts, tlm_char = tc })
+mapTyLit f (TLM { tlm_number = tn, tlm_integer = ti, tlm_string = ts, tlm_char = tc })
   = TLM 
-    { tlm_number = Map.map f tn
-    , tlm_string = Map.map f ts
-    , tlm_char = Map.map f tc
+    { tlm_number  = Map.map f tn
+    , tlm_integer = Map.map f ti
+    , tlm_string  = Map.map f ts
+    , tlm_char    = Map.map f tc
     }
 
 lkTyLit :: TyLit -> TyLitMap a -> Maybe a
 lkTyLit l =
   case l of
-    NumTyLit  n -> tlm_number >.> Map.lookup n
-    StrTyLit  n -> tlm_string >.> Map.lookup n
-    CharTyLit n -> tlm_char   >.> Map.lookup n 
+    NumTyLit  n -> tlm_number  >.> Map.lookup n
+    IntTyLit  n -> tlm_integer >.> Map.lookup n
+    StrTyLit  n -> tlm_string  >.> Map.lookup n
+    CharTyLit n -> tlm_char    >.> Map.lookup n 
 
 xtTyLit :: TyLit -> XT a -> TyLitMap a -> TyLitMap a
 xtTyLit l f m =
   case l of
-    NumTyLit  n -> m { tlm_number = tlm_number m |> Map.alter f n }
-    StrTyLit  n -> m { tlm_string = tlm_string m |> Map.alter f n }
-    CharTyLit n -> m { tlm_char   = tlm_char m   |> Map.alter f n }
+    NumTyLit  n -> m { tlm_number  = tlm_number m  |> Map.alter f n }
+    IntTyLit  n -> m { tlm_integer = tlm_integer m |> Map.alter f n }
+    StrTyLit  n -> m { tlm_string  = tlm_string m  |> Map.alter f n }
+    CharTyLit n -> m { tlm_char    = tlm_char m    |> Map.alter f n }
 
 foldTyLit :: (a -> b -> b) -> TyLitMap a -> b -> b
-foldTyLit l m = flip (Map.foldr l) (tlm_string m)
-              . flip (Map.foldr l) (tlm_number m)
-              . flip (Map.foldr l) (tlm_char   m)
+foldTyLit l m = flip (Map.foldr l) (tlm_string  m)
+              . flip (Map.foldr l) (tlm_number  m)
+              . flip (Map.foldr l) (tlm_integer m)
+              . flip (Map.foldr l) (tlm_char    m)
 
 -------------------------------------------------
 -- | @TypeMap a@ is a map from 'Type' to @a@.  If you are a client, this

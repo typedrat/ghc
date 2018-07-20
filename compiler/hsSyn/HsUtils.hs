@@ -668,6 +668,8 @@ typeToLHsType ty
     go (AppTy t1 t2)        = nlHsAppTy (go t1) (go t2)
     go (LitTy (NumTyLit n))
       = noLoc $ HsTyLit NoExt (HsNumTy NoSourceText n)
+    go (LitTy (IntTyLit i))
+      = noLoc $ HsTyLit NoExt (HsIntTy NoSourceText i)
     go (LitTy (StrTyLit s))
       = noLoc $ HsTyLit NoExt (HsStrTy NoSourceText s)
     go (LitTy (CharTyLit c))

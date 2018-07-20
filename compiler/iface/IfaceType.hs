@@ -166,7 +166,8 @@ and IfaceType.
 -}
 
 data IfaceTyLit
-  = IfaceNumTyLit  Integer
+  = IfaceNumTyLit  Natural
+  | IfaceIntTyLit  Integer
   | IfaceStrTyLit  FastString
   | IfaceCharTyLit Char
   deriving (Eq)
@@ -1269,7 +1270,8 @@ pprTuple _ sort promoted args
     tupleParens sort (pprWithCommas pprIfaceType args')
 
 pprIfaceTyLit :: IfaceTyLit -> SDoc
-pprIfaceTyLit (IfaceNumTyLit n) = integer n
+pprIfaceTyLit (IfaceNumTyLit n) = integer (toInteger n)
+pprIfaceTyLit (IfaceIntTyLit n) = integer n
 pprIfaceTyLit (IfaceStrTyLit n) = text (show n)
 pprIfaceTyLit (IfaceCharTyLit n) = text (show n)
 
@@ -1426,18 +1428,21 @@ instance Outputable IfaceTyLit where
   ppr = pprIfaceTyLit
 
 instance Binary IfaceTyLit where
-  put_ bh (IfaceNumTyLit  n)  = putByte bh 1 >> put_ bh n
-  put_ bh (IfaceStrTyLit  n)  = putByte bh 2 >> put_ bh n
-  put_ bh (IfaceCharTyLit n)  = putByte bh 3 >> put_ bh n
+  put_ bh (IfaceNumTyLit  n)  = putByte bh 1 >> put_ bh (toInteger n)
+  put_ bh (IfaceIntTyLit  n)  = putByte bh 2 >> put_ bh n
+  put_ bh (IfaceStrTyLit  n)  = putByte bh 3 >> put_ bh n
+  put_ bh (IfaceCharTyLit n)  = putByte bh 4 >> put_ bh n
 
   get bh =
     do tag <- getByte bh
        case tag of
          1 -> do { n <- get bh
-                 ; return (IfaceNumTyLit n) }
+                 ; return (IfaceNumTyLit (fromInteger n)) }
          2 -> do { n <- get bh
-                 ; return (IfaceStrTyLit n) }
+                 ; return (IfaceIntTyLit n) }
          3 -> do { n <- get bh
+                 ; return (IfaceStrTyLit n) }
+         4 -> do { n <- get bh
                  ; return (IfaceCharTyLit n) }
          _ -> panic ("get IfaceTyLit " ++ show tag)
 

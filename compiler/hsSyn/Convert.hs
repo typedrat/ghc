@@ -1448,7 +1448,7 @@ split_ty_app ty = go ty []
     go f as           = return (f,as)
 
 cvtTyLit :: TH.TyLit -> HsTyLit
-cvtTyLit (TH.NumTyLit i) = HsNumTy NoSourceText i
+cvtTyLit (TH.NumTyLit i) = HsNumTy NoSourceText (fromInteger i)
 cvtTyLit (TH.StrTyLit s) = HsStrTy NoSourceText (fsLit s)
 
 {- | @cvtOpAppT x op y@ converts @op@ and @y@ and produces the operator

@@ -214,6 +214,7 @@ toIfaceTyCon_name n = IfaceTyCon n info
 
 toIfaceTyLit :: TyLit -> IfaceTyLit
 toIfaceTyLit (NumTyLit  x) = IfaceNumTyLit  x
+toIfaceTyLit (IntTyLit  x) = IfaceIntTyLit  x
 toIfaceTyLit (StrTyLit  x) = IfaceStrTyLit  x
 toIfaceTyLit (CharTyLit x) = IfaceCharTyLit x
 
