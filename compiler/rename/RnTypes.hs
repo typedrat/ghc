@@ -617,6 +617,17 @@ rnHsTyKi env tyLit@(HsTyLit _ intTy@(HsIntTy _ _))
        ; fromIntegerVar <- rnTyVar env fromInteger_RDR
        ; return (HsAppTy noExt (noLoc (HsTyVar noExt NotPromoted (noLoc fromIntegerTyFamName))) (noLoc (HsTyLit noExt intTy)), unitFV fromIntegerVar) }
 
+rnHsTyKi env tyLit@(HsTyLit _ strTy@(HsStrTy _ _))
+  = do { data_kinds <- xoptM LangExt.DataKinds
+       ; unless data_kinds (addErr (dataKindsErr env tyLit))
+       ; overloaded_strings <- xoptM LangExt.OverloadedStrings
+       ; checkPolyKinds env tyLit
+       ; let fromSymbol_RDR = nameRdrName fromSymbolTyFamName
+       ; fromSymbolVar <- rnTyVar env fromSymbol_RDR
+       ; if overloaded_strings
+           then return (HsAppTy noExt (noLoc (HsTyVar noExt NotPromoted (noLoc fromSymbolTyFamName))) (noLoc (HsTyLit noExt strTy)), unitFV fromSymbolVar) 
+           else return (HsTyLit noExt strTy, emptyFVs) }
+
 rnHsTyKi env tyLit@(HsTyLit _ t)
   = do { data_kinds <- xoptM LangExt.DataKinds
        ; unless data_kinds (addErr (dataKindsErr env tyLit))

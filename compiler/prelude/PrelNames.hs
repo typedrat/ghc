@@ -267,7 +267,7 @@ basicKnownKeyNames
         divIntName, modIntName,
 
         -- String stuff
-        fromStringName,
+        fromStringName, fromSymbolTyFamName,
 
         -- Enum stuff
         enumFromName, enumFromThenName,
@@ -1519,8 +1519,9 @@ fingerprintDataConName =
 eqTyConName :: Name
 eqTyConName        = tcQual dATA_TYPE_EQUALITY (fsLit "~")         eqTyConKey
 
-fromIntegerTyFamName :: Name
-fromIntegerTyFamName = tcQual gHC_TYPENATS (fsLit "FromInteger")   fromIntegerTyFamNameKey
+fromIntegerTyFamName, fromSymbolTyFamName :: Name
+fromIntegerTyFamName = tcQual gHC_TYPENATS (fsLit "FromInteger") fromIntegerTyFamNameKey
+fromSymbolTyFamName  = tcQual gHC_TYPELITS (fsLit "FromSymbol")  fromSymbolTyFamNameKey
 
 {-
 ************************************************************************
@@ -1913,6 +1914,9 @@ fromIntegerTyFamNameKey = mkPreludeTyConUnique 400
 
 typeIntToNatTyFamNameKey :: Unique
 typeIntToNatTyFamNameKey = mkPreludeTyConUnique 401
+
+fromSymbolTyFamNameKey :: Unique
+fromSymbolTyFamNameKey = mkPreludeTyConUnique 500
 
 {-
 ************************************************************************

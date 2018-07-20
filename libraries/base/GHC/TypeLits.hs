@@ -38,6 +38,7 @@ module GHC.TypeLits
   , type N.Div, type N.Mod, type N.Log2
   , AppendSymbol
   , N.CmpNat, CmpSymbol, CmpChar
+  , FromSymbol
   , SymbolToString, StringToSymbol
 
   -- * User-defined type errors
@@ -174,6 +175,10 @@ type family SymbolToString (m :: Symbol) :: String
 --
 -- @since 4.12.0.0
 type family StringToSymbol (m :: String) :: Symbol
+
+type family FromSymbol (m :: Symbol) :: a
+type instance FromSymbol m = m
+type instance FromSymbol m = SymbolToString m
 
 -- | A description of a custom type error.
 data {-kind-} ErrorMessage = Text Symbol
