@@ -225,7 +225,7 @@ import UniqSet
 import Class
 import TyCon
 import TysPrim
-import {-# SOURCE #-} TysWiredIn ( listTyCon, typeNatKind, charTy
+import {-# SOURCE #-} TysWiredIn ( listTyCon, integerTy, charTy
                                  , typeSymbolKind, liftedTypeKind )
 import PrelNames
 import CoAxiom
@@ -2368,7 +2368,7 @@ typeKind_apps fun             args = piResultTys (typeKind fun) args
 typeLiteralKind :: TyLit -> Kind
 typeLiteralKind l =
   case l of
-    NumTyLit  _ -> typeNatKind
+    NumTyLit  _ -> integerTy
     StrTyLit  _ -> typeSymbolKind
     CharTyLit _ -> charTy
 

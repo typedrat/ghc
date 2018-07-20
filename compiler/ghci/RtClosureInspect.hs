@@ -51,7 +51,6 @@ import Util
 import VarSet
 import BasicTypes       ( Boxity(..) )
 import TysPrim
-import PrelNames
 import TysWiredIn
 import DynFlags
 import Outputable as Ppr
@@ -341,7 +340,7 @@ cPprTermBase y =
 
    isIntegerTy ty = fromMaybe False $ do
      (tc,_) <- tcSplitTyConApp_maybe ty
-     return (tyConName tc == integerTyConName)
+     return (tc == integerTyCon)
 
    ppr_int, ppr_char, ppr_float, ppr_double, ppr_integer
       :: Precedence -> Term -> m SDoc

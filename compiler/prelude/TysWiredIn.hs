@@ -57,6 +57,10 @@ module TysWiredIn (
         -- * Word8
         word8TyCon, word8DataCon, word8TyConName, word8Ty,
 
+        -- * Integer and Natural
+        integerTyCon, integerSDataCon, integerTyConName, integerTy,
+        naturalTyCon, naturalSDataCon, naturalTyConName, naturalTy,
+
         -- * List
         listTyCon, listTyCon_RDR, listTyConName, listTyConKey,
         nilDataCon, nilDataConName, nilDataConKey,
@@ -132,6 +136,7 @@ import TysPrim
 import {-# SOURCE #-} KnownUniques
 
 -- others:
+import Config           ( cIntegerLibraryType, IntegerLibrary(..) )
 import CoAxiom
 import Id
 import Constants        ( mAX_TUPLE_SIZE, mAX_CTUPLE_SIZE, mAX_SUM_SIZE )
@@ -212,6 +217,8 @@ wiredInTyCons = [ -- Units are not treated like other tuples, because then
                 , intTyCon
                 , wordTyCon
                 , word8TyCon
+                , integerTyCon
+                , naturalTyCon
                 , listTyCon
                 , maybeTyCon
                 , heqTyCon
@@ -223,7 +230,9 @@ wiredInTyCons = [ -- Units are not treated like other tuples, because then
                 , vecElemTyCon
                 , constraintKindTyCon
                 , liftedTypeKindTyCon
-                ]
+                ] ++ case cIntegerLibraryType of
+                  IntegerGMP    -> [gmpBigNatTyCon]
+                  IntegerSimple -> [simpleDigitsTyCon]
 
 mkWiredInTyConName :: BuiltInSyntax -> Module -> FastString -> Unique -> TyCon -> Name
 mkWiredInTyConName built_in modu fs unique tycon
@@ -1284,6 +1293,137 @@ doubleTyCon = pcTyCon doubleTyConName
 
 doubleDataCon :: DataCon
 doubleDataCon = pcDataCon doubleDataConName [] [doublePrimTy] doubleTyCon
+
+gmpBigNatTyConName, gmpBigNatBNDataConName :: Name
+gmpBigNatTyConName     = mkWiredInTyConName   UserSyntax gHC_INTEGER_TYPE (fsLit "BigNat") gmpBigNatTyConKey     gmpBigNatTyCon
+gmpBigNatBNDataConName = mkWiredInDataConName UserSyntax gHC_INTEGER_TYPE (fsLit "BN#")    gmpBigNatBNDataConKey gmpBigNatBNDataCon
+
+gmpBigNatTy :: Type
+gmpBigNatTy = mkTyConTy gmpBigNatTyCon
+
+gmpBigNatTyCon :: TyCon
+gmpBigNatTyCon = pcTyCon gmpBigNatTyConName
+                  Nothing []
+                  [gmpBigNatBNDataCon]
+
+gmpBigNatBNDataCon :: DataCon
+gmpBigNatBNDataCon = pcDataCon gmpBigNatBNDataConName [] [byteArrayPrimTy] gmpBigNatTyCon
+
+simpleDigitsTyConName, simpleDigitsSomeDataConName, simpleDigitsNoneDataConName :: Name
+simpleDigitsTyConName       = mkWiredInTyConName   UserSyntax gHC_INTEGER_TYPE (fsLit "Digits") simpleDigitsTyConKey       simpleDigitsTyCon
+simpleDigitsSomeDataConName = mkWiredInDataConName UserSyntax gHC_INTEGER_TYPE (fsLit "Some")   simpleDigitsSomeDataConKey simpleDigitsSomeDataCon
+simpleDigitsNoneDataConName = mkWiredInDataConName UserSyntax gHC_INTEGER_TYPE (fsLit "None")   simpleDigitsNoneDataConKey simpleDigitsNoneDataCon
+
+simpleDigitsTy :: Type
+simpleDigitsTy = mkTyConTy simpleDigitsTyCon
+
+simpleDigitsTyCon :: TyCon
+simpleDigitsTyCon = pcTyCon simpleDigitsTyConName
+                      Nothing []
+                      [simpleDigitsSomeDataCon, simpleDigitsNoneDataCon]
+
+simpleDigitsSomeDataCon, simpleDigitsNoneDataCon :: DataCon
+simpleDigitsSomeDataCon = pcDataCon simpleDigitsSomeDataConName []
+                            [wordPrimTy, simpleDigitsTy] simpleDigitsTyCon
+simpleDigitsNoneDataCon = pcDataCon simpleDigitsNoneDataConName []
+                            [] simpleDigitsTyCon
+
+integerTyConName, naturalTyConName :: Name
+integerTyConName = mkWiredInTyConName 
+  UserSyntax gHC_INTEGER_TYPE (fsLit "Integer")
+  integerTyConKey integerTyCon
+naturalTyConName = mkWiredInTyConName
+  UserSyntax gHC_NATURAL (fsLit "Natural")
+  naturalTyConKey naturalTyCon
+
+integerTy, naturalTy :: Type
+integerTy = mkTyConTy integerTyCon
+naturalTy = mkTyConTy naturalTyCon
+
+integerTyCon, naturalTyCon :: TyCon
+integerSDataCon, naturalSDataCon :: Maybe DataCon
+(integerTyCon, integerSDataCon, naturalTyCon, naturalSDataCon) = case cIntegerLibraryType of
+  IntegerGMP -> (integerTyCon', Just integerSDataCon', naturalTyCon', Just naturalSDataCon') 
+    where
+      integerSDataConName, integerJpDataConName, integerJnDataConName :: Name
+      integerSDataConName = mkWiredInDataConName
+        UserSyntax gHC_INTEGER_TYPE (fsLit "S#")
+        integerSDataConKey integerSDataCon'
+      integerJpDataConName = mkWiredInDataConName
+        UserSyntax gHC_INTEGER_TYPE (fsLit "Jp#")
+        integerJpDataConKey integerJpDataCon
+      integerJnDataConName = mkWiredInDataConName
+        UserSyntax gHC_INTEGER_TYPE (fsLit "Jn#")
+        integerJnDataConKey integerJnDataCon
+      
+      integerTyCon' :: TyCon
+      integerTyCon' = pcTyCon integerTyConName Nothing [] 
+                      [integerSDataCon', integerJpDataCon, integerJnDataCon]
+
+      integerSDataCon', integerJpDataCon, integerJnDataCon :: DataCon
+      integerSDataCon' = pcDataCon integerSDataConName [] [intPrimTy] integerTyCon'
+      integerJpDataCon = pcDataCon integerJpDataConName [] [gmpBigNatTy] integerTyCon'
+      integerJnDataCon = pcDataCon integerJnDataConName [] [gmpBigNatTy] integerTyCon'
+
+      naturalSDataConName, naturalJDataConName :: Name
+      naturalSDataConName = mkWiredInDataConName
+        UserSyntax gHC_NATURAL (fsLit "NatS#") 
+        naturalSDataConKey naturalSDataCon'
+      naturalJDataConName = mkWiredInDataConName 
+        UserSyntax gHC_NATURAL (fsLit "NatJ#")
+        naturalJDataConKey naturalJDataCon
+
+      naturalTyCon' :: TyCon
+      naturalTyCon' = pcTyCon naturalTyConName Nothing []
+                      [naturalSDataCon', naturalJDataCon]
+      
+      naturalSDataCon', naturalJDataCon :: DataCon
+      naturalSDataCon' = pcDataCon naturalSDataConName [] 
+        [wordPrimTy]  naturalTyCon'
+      naturalJDataCon  = pcDataCon naturalJDataConName []
+        [gmpBigNatTy] naturalTyCon'
+  IntegerSimple -> (integerTyCon', Nothing, naturalTyCon', Nothing)
+    where
+      integerTyCon' :: TyCon
+      integerTyCon' = pcTyCon integerTyConName Nothing []
+                        [ integerPositiveDataCon
+                        , integerNegativeDataCon
+                        , integerNaughtDataCon
+                        ]
+
+      integerPositiveDataConName, integerNegativeDataConName,
+        integerNaughtDataConName :: Name
+      integerPositiveDataConName = mkWiredInDataConName 
+        UserSyntax gHC_INTEGER_TYPE (fsLit "Positive")
+        integerPositiveDataConKey integerPositiveDataCon
+      integerNegativeDataConName = mkWiredInDataConName
+        UserSyntax gHC_INTEGER_TYPE (fsLit "Negative")
+        integerNegativeDataConKey integerNegativeDataCon
+      integerNaughtDataConName = mkWiredInDataConName 
+        UserSyntax gHC_INTEGER_TYPE (fsLit "Naught")
+        integerNaughtDataConKey integerNaughtDataCon
+                  
+
+      integerPositiveDataCon, integerNegativeDataCon,
+        integerNaughtDataCon :: DataCon
+      integerPositiveDataCon = pcDataCon integerPositiveDataConName []
+                                [simpleDigitsTy] integerTyCon'
+      integerNegativeDataCon = pcDataCon integerNegativeDataConName []
+                                [simpleDigitsTy] integerTyCon'
+      integerNaughtDataCon   = pcDataCon integerNaughtDataConName []
+                                [] integerTyCon'
+
+      naturalNaturalDataConName :: Name
+      naturalNaturalDataConName = mkWiredInDataConName
+        UserSyntax gHC_NATURAL (fsLit "Natural") 
+        naturalNaturalDataConKey naturalNaturalDataCon
+
+      naturalTyCon' :: TyCon
+      naturalTyCon' = pcTyCon naturalTyConName Nothing [] [naturalNaturalDataCon]
+
+      naturalNaturalDataCon :: DataCon
+      naturalNaturalDataCon = pcDataCon naturalNaturalDataConName []
+                                [integerTy] naturalTyCon'
 
 {-
 ************************************************************************

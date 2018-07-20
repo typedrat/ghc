@@ -9,8 +9,7 @@ Core pass to saturate constructors and PrimOps
 
 module CorePrep (
       corePrepPgm, corePrepExpr, cvtLitInteger, cvtLitNatural,
-      lookupMkIntegerName, lookupIntegerSDataConName,
-      lookupMkNaturalName, lookupNaturalSDataConName
+      lookupMkIntegerName, lookupMkNaturalName
   ) where
 
 #include "HsVersions.h"
@@ -56,7 +55,6 @@ import Pair
 import Outputable
 import Platform
 import FastString
-import Config
 import Name             ( NamedThing(..), nameSrcSpan )
 import SrcLoc           ( SrcSpan(..), realSrcLocSpan, mkRealSrcLoc )
 import Data.Bits
@@ -1537,19 +1535,7 @@ lookupMkNaturalName dflags hsc_env
     = guardNaturalUse dflags $ liftM tyThingId $
       lookupGlobal hsc_env mkNaturalName
 
-lookupIntegerSDataConName :: DynFlags -> HscEnv -> IO (Maybe DataCon)
-lookupIntegerSDataConName dflags hsc_env = case cIntegerLibraryType of
-    IntegerGMP -> guardIntegerUse dflags $ liftM (Just . tyThingDataCon) $
-                  lookupGlobal hsc_env integerSDataConName
-    IntegerSimple -> return Nothing
-
-lookupNaturalSDataConName :: DynFlags -> HscEnv -> IO (Maybe DataCon)
-lookupNaturalSDataConName dflags hsc_env = case cIntegerLibraryType of
-    IntegerGMP -> guardNaturalUse dflags $ liftM (Just . tyThingDataCon) $
-                  lookupGlobal hsc_env naturalSDataConName
-    IntegerSimple -> return Nothing
-
--- | Helper for 'lookupMkIntegerName', 'lookupIntegerSDataConName'
+-- | Helper for 'lookupMkIntegerName'
 guardIntegerUse :: DynFlags -> IO a -> IO a
 guardIntegerUse dflags act
   | thisPackage dflags == primUnitId
@@ -1558,7 +1544,7 @@ guardIntegerUse dflags act
   = return $ panic "Can't use Integer in integer-*"
   | otherwise = act
 
--- | Helper for 'lookupMkNaturalName', 'lookupNaturalSDataConName'
+-- | Helper for 'lookupMkNaturalName'
 --
 -- Just like we can't use Integer literals in `integer-*`, we can't use Natural
 -- literals in `base`. If we do, we get interface loading error for GHC.Natural.
@@ -1576,8 +1562,6 @@ mkInitialCorePrepEnv :: DynFlags -> HscEnv -> IO CorePrepEnv
 mkInitialCorePrepEnv dflags hsc_env
     = do mkIntegerId <- lookupMkIntegerName dflags hsc_env
          mkNaturalId <- lookupMkNaturalName dflags hsc_env
-         integerSDataCon <- lookupIntegerSDataConName dflags hsc_env
-         naturalSDataCon <- lookupNaturalSDataConName dflags hsc_env
          return $ CPE {
                       cpe_dynFlags = dflags,
                       cpe_env = emptyVarEnv,

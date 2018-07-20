@@ -46,7 +46,7 @@ import TcEvidence
 import TcType
 import Type
 import Coercion
-import TysWiredIn ( typeNatKind, typeSymbolKind )
+import TysWiredIn ( integerTy, typeSymbolKind )
 import Id
 import MkId(proxyHashId)
 import Name
@@ -1290,7 +1290,7 @@ ds_ev_typeable ty (EvTypeableTyLit ev)
     -- tr_fun is the Name of
     --       typeNatTypeRep    :: KnownNat    a => Proxy# a -> TypeRep a
     -- of    typeSymbolTypeRep :: KnownSymbol a => Proxy# a -> TypeRep a
-    tr_fun | ty_kind `eqType` typeNatKind    = typeNatTypeRepName
+    tr_fun | ty_kind `eqType` integerTy      = typeNatTypeRepName
            | ty_kind `eqType` typeSymbolKind = typeSymbolTypeRepName
            | otherwise = panic "dsEvTypeable: unknown type lit kind"
 

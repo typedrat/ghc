@@ -136,8 +136,6 @@ import Unique
 import Name
 import SrcLoc
 import FastString
-import Config ( cIntegerLibraryType, IntegerLibrary(..) )
-import Panic ( panic )
 
 {-
 ************************************************************************
@@ -338,8 +336,7 @@ basicKnownKeyNames
         dollarName,
 
         -- Integer
-        integerTyConName, mkIntegerName,
-        integerToWord64Name, integerToInt64Name,
+        mkIntegerName, integerToWord64Name, integerToInt64Name,
         word64ToIntegerName, int64ToIntegerName,
         plusIntegerName, timesIntegerName, smallIntegerName,
         wordToIntegerName,
@@ -357,7 +354,6 @@ basicKnownKeyNames
         shiftLIntegerName, shiftRIntegerName, bitIntegerName,
 
         -- Natural
-        naturalTyConName,
         naturalFromIntegerName, naturalToIntegerName,
         plusNaturalName, minusNaturalName, timesNaturalName, mkNaturalName,
         wordToNaturalName,
@@ -436,9 +432,7 @@ basicKnownKeyNames
         -- homogeneous equality
         , eqTyConName
 
-    ] ++ case cIntegerLibraryType of
-           IntegerGMP    -> [integerSDataConName,naturalSDataConName]
-           IntegerSimple -> []
+    ]
 
 genericTyConNames :: [Name]
 genericTyConNames = [
@@ -1106,8 +1100,7 @@ fromIntegerName   = varQual gHC_NUM (fsLit "fromInteger") fromIntegerClassOpKey
 minusName         = varQual gHC_NUM (fsLit "-")           minusClassOpKey
 negateName        = varQual gHC_NUM (fsLit "negate")      negateClassOpKey
 
-integerTyConName, mkIntegerName, integerSDataConName,
-    integerToWord64Name, integerToInt64Name,
+mkIntegerName, integerToWord64Name, integerToInt64Name,
     word64ToIntegerName, int64ToIntegerName,
     plusIntegerName, timesIntegerName, smallIntegerName,
     wordToIntegerName,
@@ -1123,11 +1116,6 @@ integerTyConName, mkIntegerName, integerSDataConName,
     gcdIntegerName, lcmIntegerName,
     andIntegerName, orIntegerName, xorIntegerName, complementIntegerName,
     shiftLIntegerName, shiftRIntegerName, bitIntegerName :: Name
-integerTyConName      = tcQual  gHC_INTEGER_TYPE (fsLit "Integer")           integerTyConKey
-integerSDataConName   = dcQual gHC_INTEGER_TYPE (fsLit n)                    integerSDataConKey
-  where n = case cIntegerLibraryType of
-            IntegerGMP    -> "S#"
-            IntegerSimple -> panic "integerSDataConName evaluated for integer-simple"
 mkIntegerName         = varQual gHC_INTEGER_TYPE (fsLit "mkInteger")         mkIntegerIdKey
 integerToWord64Name   = varQual gHC_INTEGER_TYPE (fsLit "integerToWord64")   integerToWord64IdKey
 integerToInt64Name    = varQual gHC_INTEGER_TYPE (fsLit "integerToInt64")    integerToInt64IdKey
@@ -1172,13 +1160,6 @@ shiftRIntegerName     = varQual gHC_INTEGER_TYPE (fsLit "shiftRInteger")     shi
 bitIntegerName        = varQual gHC_INTEGER_TYPE (fsLit "bitInteger")        bitIntegerIdKey
 
 -- GHC.Natural types
-naturalTyConName, naturalSDataConName :: Name
-naturalTyConName     = tcQual gHC_NATURAL (fsLit "Natural") naturalTyConKey
-naturalSDataConName  = dcQual gHC_NATURAL (fsLit n)         naturalSDataConKey
-  where n = case cIntegerLibraryType of
-            IntegerGMP    -> "NatS#"
-            IntegerSimple -> panic "naturalSDataConName evaluated for integer-simple"
-
 naturalFromIntegerName :: Name
 naturalFromIntegerName = varQual gHC_NATURAL (fsLit "naturalFromInteger") naturalFromIntegerIdKey
 
@@ -1908,6 +1889,12 @@ typeSymbolToStringTyFamNameKey = mkPreludeTyConUnique 192
 typeStringToSymbolTyFamNameKey :: Unique
 typeStringToSymbolTyFamNameKey = mkPreludeTyConUnique 193
 
+gmpBigNatTyConKey :: Unique
+gmpBigNatTyConKey = mkPreludeTyConUnique 194
+
+simpleDigitsTyConKey :: Unique
+simpleDigitsTyConKey = mkPreludeTyConUnique 195
+
 ---------------- Template Haskell -------------------
 --      THNames.hs: USES TyConUniques 200-299
 -----------------------------------------------------
@@ -2075,6 +2062,21 @@ typeLitSymbolDataConKey, typeLitNatDataConKey :: Unique
 typeLitSymbolDataConKey   = mkPreludeDataConUnique 107
 typeLitNatDataConKey      = mkPreludeDataConUnique 108
 
+integerJpDataConKey, integerJnDataConKey :: Unique
+integerJpDataConKey       = mkPreludeDataConUnique 109
+integerJnDataConKey       = mkPreludeDataConUnique 110
+
+gmpBigNatBNDataConKey :: Unique
+gmpBigNatBNDataConKey     = mkPreludeDataConUnique 111 
+
+integerPositiveDataConKey, integerNegativeDataConKey, integerNaughtDataConKey :: Unique
+integerPositiveDataConKey = mkPreludeDataConUnique 112
+integerNegativeDataConKey = mkPreludeDataConUnique 113
+integerNaughtDataConKey   = mkPreludeDataConUnique 114
+
+simpleDigitsSomeDataConKey, simpleDigitsNoneDataConKey :: Unique
+simpleDigitsSomeDataConKey = mkPreludeDataConUnique 115
+simpleDigitsNoneDataConKey = mkPreludeDataConUnique 116
 
 ---------------- Template Haskell -------------------
 --      THNames.hs: USES DataUniques 200-250
@@ -2420,15 +2422,18 @@ makeStaticKey = mkPreludeMiscIdUnique 561
 -- Natural
 naturalFromIntegerIdKey, naturalToIntegerIdKey, plusNaturalIdKey,
    minusNaturalIdKey, timesNaturalIdKey, mkNaturalIdKey,
-   naturalSDataConKey, wordToNaturalIdKey :: Unique
-naturalFromIntegerIdKey = mkPreludeMiscIdUnique 562
-naturalToIntegerIdKey   = mkPreludeMiscIdUnique 563
-plusNaturalIdKey        = mkPreludeMiscIdUnique 564
-minusNaturalIdKey       = mkPreludeMiscIdUnique 565
-timesNaturalIdKey       = mkPreludeMiscIdUnique 566
-mkNaturalIdKey          = mkPreludeMiscIdUnique 567
-naturalSDataConKey      = mkPreludeMiscIdUnique 568
-wordToNaturalIdKey      = mkPreludeMiscIdUnique 569
+   naturalSDataConKey, naturalJDataConKey, naturalNaturalDataConKey,
+   wordToNaturalIdKey :: Unique
+naturalFromIntegerIdKey  = mkPreludeMiscIdUnique 562
+naturalToIntegerIdKey    = mkPreludeMiscIdUnique 563
+plusNaturalIdKey         = mkPreludeMiscIdUnique 564
+minusNaturalIdKey        = mkPreludeMiscIdUnique 565
+timesNaturalIdKey        = mkPreludeMiscIdUnique 566
+mkNaturalIdKey           = mkPreludeMiscIdUnique 567
+wordToNaturalIdKey       = mkPreludeMiscIdUnique 569
+naturalSDataConKey       = mkPreludeMiscIdUnique 600
+naturalJDataConKey       = mkPreludeMiscIdUnique 610
+naturalNaturalDataConKey = mkPreludeMiscIdUnique 620
 
 {-
 ************************************************************************

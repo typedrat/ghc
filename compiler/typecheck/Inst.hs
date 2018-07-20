@@ -45,7 +45,7 @@ import TcRnMonad
 import TcEnv
 import TcEvidence
 import InstEnv
-import TysWiredIn  ( heqDataCon )
+import TysWiredIn  ( heqDataCon, integerTy )
 import CoreSyn     ( isOrphan )
 import FunDeps
 import TcMType
@@ -650,9 +650,7 @@ newNonTrivialOverloadedLit _ lit _
 ------------
 mkOverLit ::OverLitVal -> TcM (HsLit GhcTc)
 mkOverLit (HsIntegral i)
-  = do  { integer_ty <- tcMetaTy integerTyConName
-        ; return (HsInteger (il_text i)
-                            (il_value i) integer_ty) }
+  = return (HsInteger (il_text i) (il_value i) integerTy)
 
 mkOverLit (HsFractional r)
   = do  { rat_ty <- tcMetaTy rationalTyConName

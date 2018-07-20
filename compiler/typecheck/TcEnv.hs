@@ -881,12 +881,12 @@ tcGetDefaultTys
 
         -- No use-supplied default
         -- Use [Integer, Double], plus modifications
-        { integer_ty <- tcMetaTy integerTyConName
-        ; list_ty <- tcMetaTy listTyConName
+        { list_ty <- tcMetaTy listTyConName
+        ; checkWiredInTyCon integerTyCon
         ; checkWiredInTyCon doubleTyCon
         ; let deflt_tys = opt_deflt extended_defaults [unitTy, list_ty]
                           -- Note [Extended defaults]
-                          ++ [integer_ty, doubleTy]
+                          ++ [integerTy, doubleTy]
                           ++ opt_deflt ovl_strings [stringTy]
         ; return (deflt_tys, flags) } } }
   where

@@ -9,7 +9,7 @@ mkFunKind :: Kind -> Kind -> Kind
 mkForAllKind :: TyVar -> ArgFlag -> Kind -> Kind
 
 listTyCon :: TyCon
-typeNatKind, typeSymbolKind, charTy :: Type
+integerTy, typeSymbolKind, charTy :: Type
 mkBoxedTupleTy :: [Type] -> Type
 
 coercibleTyCon, heqTyCon :: TyCon

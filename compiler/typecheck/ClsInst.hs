@@ -307,7 +307,7 @@ matchTypeable clas [k,t]  -- clas = Typeable
   | isJust (tcSplitPredFunTy_maybe t) = return NoInstance   -- Qualified type
 
   -- Now cases that do work
-  | k `eqType` typeNatKind                 = doTyLit knownNatClassName         t
+  | k `eqType` integerTy                   = doTyLit knownNatClassName         t
   | k `eqType` typeSymbolKind              = doTyLit knownSymbolClassName      t
   | isConstraintKind t                     = doTyConApp clas t constraintKindTyCon []
   | Just (arg,ret) <- splitFunTy_maybe t   = doFunTy    clas t arg ret

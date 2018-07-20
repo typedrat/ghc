@@ -41,6 +41,7 @@ import IdInfo
 import InstEnv
 import FamInstEnv
 import Type             ( tidyTopType )
+import TysWiredIn       ( integerSDataCon, naturalSDataCon )
 import Demand           ( appIsBottom, isTopSig, isBottomingSig )
 import BasicTypes
 import Name hiding (varName)
@@ -1094,8 +1095,6 @@ tidyTopBinds :: HscEnv
 tidyTopBinds hsc_env this_mod unfold_env init_occ_env binds
   = do mkIntegerId <- lookupMkIntegerName dflags hsc_env
        mkNaturalId <- lookupMkNaturalName dflags hsc_env
-       integerSDataCon <- lookupIntegerSDataConName dflags hsc_env
-       naturalSDataCon <- lookupNaturalSDataConName dflags hsc_env
        let cvt_literal nt i = case nt of
              LitNumInteger -> Just (cvtLitInteger dflags mkIntegerId integerSDataCon i)
              LitNumNatural -> Just (cvtLitNatural dflags mkNaturalId naturalSDataCon i)

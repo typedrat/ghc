@@ -256,13 +256,11 @@ mkWordExprWord dflags w = mkCoreConApps wordDataCon [mkWordLitWord dflags w]
 
 -- | Create a 'CoreExpr' which will evaluate to the given @Integer@
 mkIntegerExpr  :: MonadThings m => Integer -> m CoreExpr  -- Result :: Integer
-mkIntegerExpr i = do t <- lookupTyCon integerTyConName
-                     return (Lit (mkLitInteger i (mkTyConTy t)))
+mkIntegerExpr i = return (Lit (mkLitInteger i integerTy))
 
 -- | Create a 'CoreExpr' which will evaluate to the given @Natural@
 mkNaturalExpr  :: MonadThings m => Integer -> m CoreExpr
-mkNaturalExpr i = do t <- lookupTyCon naturalTyConName
-                     return (Lit (mkLitNatural i (mkTyConTy t)))
+mkNaturalExpr i = return (Lit (mkLitNatural i naturalTy))
 
 -- | Create a 'CoreExpr' which will evaluate to the given @Float@
 mkFloatExpr :: Float -> CoreExpr
